@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyCast - Modern Weather App</title>
+    
+    <!-- Google Fonts: Outfit for a premium, modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================
+           1. DESIGN SYSTEM & CUSTOM VARIABLES
+           ========================================== */
+        :root {
+            --primary-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+            --card-bg: rgba(255, 255, 255, 0.45);
+            --card-border: rgba(15, 23, 42, 0.08);
+            --card-hover-border: rgba(15, 23, 42, 0.16);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --accent-color: #4f46e5;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            --error-color: #ef4444;
+            --success-color: #22c55e;
+            --transition-speed: 0.3s;
+        }
+
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--primary-bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Subtle animated background shapes for premium depth */
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.4;
+            animation: float 12s infinite alternate ease-in-out;
+        }
+
+        body::before {
+            background: #a5b4fc;
+            top: 15%;
+            left: 15%;
+        }
+
+        body::after {
+            background: #f0abfc;
+            bottom: 15%;
+            right: 15%;
+            animation-delay: -6s;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(40px) scale(1.1); }
+        }
+
+        /* ==========================================
+           2. APP CONTAINER & GLASSMORPHISM CARD
+           ========================================== */
+        .app-container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: border-color var(--transition-speed), transform var(--transition-speed);
+            position: relative;
+        }
+
+        .app-container:hover {
+            border-color: var(--card-hover-border);
+        }
+
+        /* Header / Brand Title */
+        .brand {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .brand h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #0f172a, #4f46e5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+
+        .brand p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        /* ==========================================
+           3. API KEY CONFIGURATION PANEL
+           ========================================== */
+        .api-panel {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none; /* Dynamic display toggle */
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .api-panel.active {
+            display: block;
+        }
+
+        .api-panel h3 {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-panel input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            background: #ffffff;
+            color: #0f172a;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .api-panel input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .api-panel-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .api-panel-footer p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .api-panel-footer a {
+            color: #818cf8;
+            text-decoration: none;
+        }
+
+        .api-panel-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-save-api {
+            padding: 6px 12px;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-save-api:hover {
+            opacity: 0.9;
+        }
+
+        /* Config Trigger Button (Gear icon) */
+        .btn-config {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color var(--transition-speed), transform var(--transition-speed);
+        }
+
+        .btn-config:hover {
+            color: var(--text-main);
+            transform: rotate(45deg);
+        }
+
+        /* ==========================================
+           4. SEARCH CONTAINER
+           ========================================== */
+        .search-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 1rem;
+            outline: none;
+            transition: all var(--transition-speed);
+        }
+
+        .search-box input::placeholder {
+            color: #64748b;
+        }
+
+        .search-box input:focus {
+            background: #ffffff;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        }
+
+        .btn-search {
+            width: 54px;
+            height: 54px;
+            border: none;
+            border-radius: 18px;
+            background: var(--accent-gradient);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-search:active {
+            transform: translateY(0);
+        }
+
+        /* ==========================================
+           5. STATUS & ERROR MESSAGES
+           ========================================== */
+        .error-message {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            color: var(--error-color);
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .error-message.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 20px 0;
+            display: none;
+        }
+
+        .loading-spinner.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            animation: spin 1s infinite linear;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ==========================================
+           6. WEATHER CONTENT SECTION (DYNAMICAL)
+           ========================================== */
+        .weather-content {
+            display: none; /* Initially hidden */
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .weather-content.active {
+            display: flex;
+        }
+
+        /* Location Details */
+        .location {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .location span.country {
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .date-string {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+
+        /* Weather Icon and Temperature */
+        .weather-main-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .weather-icon-wrapper {
+            width: 140px;
+            height: 140px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: -10px;
+            filter: drop-shadow(0 10px 15px rgba(99, 102, 241, 0.2));
+            animation: floatIcon 4s infinite alternate ease-in-out;
+        }
+
+        .weather-icon-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        @keyframes floatIcon {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-8px); }
+        }
+
+        .temperature {
+            font-size: 4.5rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -2px;
+            position: relative;
+            margin-bottom: 6px;
+        }
+
+        .temperature span.unit {
+            font-size: 2.2rem;
+            font-weight: 400;
+            position: absolute;
+            top: 5px;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: var(--text-main);
+            text-transform: capitalize;
+            letter-spacing: 0.3px;
+        }
+
+        /* Additional Weather Stats */
+        .weather-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            margin-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 25px;
+        }
+
+        .detail-card {
+            background: rgba(255, 255, 255, 0.35);
+            border: 1px solid rgba(15, 23, 42, 0.04);
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background var(--transition-speed);
+        }
+
+        .detail-card:hover {
+            background: rgba(255, 255, 255, 0.55);
+        }
+
+        .detail-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(79, 70, 229, 0.1);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #4f46e5;
+        }
+
+        .detail-info {
+            text-align: left;
+        }
+
+        .detail-info p.label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-info p.value {
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        /* Welcoming display when app is empty */
+        .welcome-view {
+            text-align: center;
+            padding: 20px 10px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .welcome-view.hidden {
+            display: none;
+        }
+
+        /* Enhanced Welcome Illustration (Animated SVG) */
+        .welcome-illustration {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .animated-weather-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        /* Sun rotation animation */
+        .sun-group {
+            transform-origin: 58px 42px;
+            animation: sunRotate 20s infinite linear;
+        }
+
+        @keyframes sunRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Cloud float animation */
+        .cloud-path {
+            animation: cloudFloat 4s infinite alternate ease-in-out;
+        }
+
+        @keyframes cloudFloat {
+            0% { transform: translateY(0) translateX(0); }
+            100% { transform: translateY(-4px) translateX(-2px); }
+        }
+
+        .welcome-view h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-gradient {
+            background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome-view p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            max-width: 320px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-weight: 300;
+        }
+
+        /* Suggestions Pills UI */
+        .suggestions-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+            border-top: 1px solid rgba(15, 23, 42, 0.08);
+            padding-top: 20px;
+        }
+
+        .suggestions-title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .suggestion-pills {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .pill {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.60);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 20px;
+            color: var(--text-main);
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+
+        .pill:hover {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: rgba(15, 23, 42, 0.16);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .pill:active {
+            transform: translateY(0);
+        }
+
+        /* Animations helpers */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* API key alert message when key is not set */
+        .api-warning-bar {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #b45309;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background var(--transition-speed);
+        }
+
+        .api-warning-bar:hover {
+            background: rgba(245, 158, 11, 0.18);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        
+        <!-- Cog/Gear button to toggle API settings -->
+        <button class="btn-config" id="config-btn" title="API Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+        </button>
+
+        <!-- Brand/Header -->
+        <div class="brand">
+            <h1>SkyCast</h1>
+            <p>Live Atmospheric Weather Updates</p>
+        </div>
+
+        <!-- API Settings Toggle Panel -->
+        <div class="api-panel" id="api-panel">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                OpenWeatherMap API Configuration
+            </h3>
+            <input type="password" id="api-key-input" placeholder="Paste your API key here (saved locally)">
+            <div class="api-panel-footer">
+                <p>Get a free key at <a href="https://openweathermap.org/api" target="_blank" rel="noopener noreferrer">openweathermap.org</a></p>
+                <button class="btn-save-api" id="save-api-btn">Save Key</button>
+            </div>
+        </div>
+
+        <!-- Warn the user if API key is not configured -->
+        <div class="api-warning-bar" id="api-warning" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>API key is missing! Click here to configure.</span>
+        </div>
+
+        <!-- Search Form Section -->
+        <div class="search-box">
+            <input type="text" id="city-input" placeholder="Search for a city..." autocomplete="off">
+            <button class="btn-search" id="search-btn" title="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Error Message Panel -->
+        <div class="error-message" id="error-box">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span id="error-text">City not found. Please try again!</span>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div class="loading-spinner" id="loading-spinner">
+            <div class="spinner"></div>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Fetching meteorological reports...</p>
+        </div>
+
+        <!-- Initial Welcome/Idle View -->
+        <div class="welcome-view" id="welcome-view">
+            <!-- Beautiful Animated SVG Illustration -->
+            <div class="welcome-illustration">
+                <svg viewBox="0 0 100 100" class="animated-weather-svg">
+                    <!-- Rotating Sun behind cloud -->
+                    <g class="sun-group">
+                        <circle cx="58" cy="42" r="16" fill="#f59e0b" filter="drop-shadow(0 0 8px rgba(245, 158, 11, 0.6))" />
+                        <line x1="58" y1="20" x2="58" y2="10" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+                        <line x1="58" y1="74" x2="58" y2="64" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+                        <line x1="36" y1="42" x2="26" y2="42" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+                        <line x1="90" y1="42" x2="80" y2="42" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+                        <line x1="42.4" y1="26.4" x2="35.4" y2="19.4" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+                        <line x1="73.6" y1="57.6" x2="80.6" y2="64.6" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+                        <line x1="42.4" y1="57.6" x2="35.4" y2="64.6" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+                        <line x1="73.6" y1="26.4" x2="80.6" y2="19.4" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" />
+                    </g>
+                    <!-- Drifting / Pulsing Cloud in front -->
+                    <path class="cloud-path" d="M25,65 C20,65 16,61 16,56 C16,51.5 19.5,47.5 24,47 C26.5,39 34,33 43,33 C52.5,33 60,40.5 61,50 C66,50 70,54 70,59 C70,64 66,68 61,68 C61,68 29,68 25,65 Z" fill="rgba(255, 255, 255, 0.9)" filter="drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2))" />
+                </svg>
+            </div>
+            
+            <h2>Welcome to <span class="brand-gradient">SkyCast</span></h2>
+            <p>Explore real-time weather analytics and atmospheric reports across the globe.</p>
+            
+            <!-- Suggested quick searches -->
+            <div class="suggestions-container">
+                <p class="suggestions-title">Try searching for:</p>
+                <div class="suggestion-pills">
+                    <button class="pill" data-city="London">London</button>
+                    <button class="pill" data-city="Tokyo">Tokyo</button>
+                    <button class="pill" data-city="New York">New York</button>
+                    <button class="pill" data-city="Paris">Paris</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Results Content -->
+        <div class="weather-content" id="weather-content">
+            
+            <!-- City name and Country Code -->
+            <div class="location">
+                <span id="city-name">London</span>
+                <span class="country" id="country-code">GB</span>
+            </div>
+            
+            <!-- Date String -->
+            <div class="date-string" id="current-date">Monday, 1 Jan 2026</div>
+
+            <!-- Temperature, weather description, and live weather icon -->
+            <div class="weather-main-info">
+                <div class="weather-icon-wrapper">
+                    <img id="weather-icon" src="" alt="Weather Icon">
+                </div>
+                <div class="temperature">
+                    <span id="temp-value">12</span><span class="unit">°C</span>
+                </div>
+                <div class="description" id="weather-desc">Scattered Clouds</div>
+            </div>
+
+            <!-- Stats grid: Humidity and Wind Speed -->
+            <div class="weather-details-grid">
+                
+                <!-- Humidity Card -->
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/>
+                        </svg>
+                    </div>
+                    <div class="detail-info">
+                        <p class="label">Humidity</p>
+                        <p class="value" id="humidity-value">74%</p>
+                    </div>
+                </div>
+
+                <!-- Wind Speed Card -->
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+                        </svg>
+                    </div>
+                    <div class="detail-info">
+                        <p class="label">Wind Speed</p>
+                        <p class="value" id="wind-value">4.2 m/s</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ==========================================
+       7. JAVASCRIPT LOGIC
+       ========================================== -->
+    <script>
+        /**
+         * SkyCast - Beginner-friendly JS script
+         * Explains how to load and parse weather API responses
+         */
+
+        // --- HARDCODE OPTION FOR CONVENIENCE ---
+        // If you want, you can paste your OpenWeatherMap API key directly below.
+        // If left empty, the application will prompt you via the setting gear icon in the UI.
+        const HARDCODED_API_KEY = ""; 
+
+        // --- DOM Elements ---
+        const configBtn = document.getElementById("config-btn");
+        const apiPanel = document.getElementById("api-panel");
+        const apiKeyInput = document.getElementById("api-key-input");
+        const saveApiBtn = document.getElementById("save-api-btn");
+        const apiWarning = document.getElementById("api-warning");
+
+        const cityInput = document.getElementById("city-input");
+        const searchBtn = document.getElementById("search-btn");
+        const errorBox = document.getElementById("error-box");
+        const errorText = document.getElementById("error-text");
+        const loadingSpinner = document.getElementById("loading-spinner");
+        
+        const welcomeView = document.getElementById("welcome-view");
+        const weatherContent = document.getElementById("weather-content");
+
+        const cityNameSpan = document.getElementById("city-name");
+        const countryCodeSpan = document.getElementById("country-code");
+        const currentDateDiv = document.getElementById("current-date");
+        const weatherIcon = document.getElementById("weather-icon");
+        const tempValueSpan = document.getElementById("temp-value");
+        const weatherDescDiv = document.getElementById("weather-desc");
+        const humidityValueSpan = document.getElementById("humidity-value");
+        const windValueSpan = document.getElementById("wind-value");
+
+        // --- Global Functions & Setup ---
+
+        // Retrives active API Key from config inputs or localStorage
+        function getApiKey() {
+            // First check if a key was hardcoded in the script
+            if (HARDCODED_API_KEY.trim() !== "") {
+                return HARDCODED_API_KEY.trim();
+            }
+            // Otherwise, get it from localStorage (saved in the browser)
+            return localStorage.getItem("openweather_api_key") || "";
+        }
+
+        // Checks if API key is stored, and displays a warning bar if it's missing
+        function checkApiKeyStatus() {
+            const key = getApiKey();
+            if (!key) {
+                apiWarning.style.display = "flex";
+            } else {
+                apiWarning.style.display = "none";
+                apiKeyInput.value = key;
+            }
+        }
+
+        // Dynamic Date Formatter (returns e.g., "Monday, Jun 1, 2026")
+        function getFormattedDate() {
+            const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+            const today = new Date();
+            return today.toLocaleDateString('en-US', options);
+        }
+
+        // --- Event Listeners ---
+
+        // Toggle the API Settings Panel when clicking the gear icon
+        configBtn.addEventListener("click", () => {
+            apiPanel.classList.toggle("active");
+        });
+
+        // Open the configuration panel when clicking the yellow warning bar
+        apiWarning.addEventListener("click", () => {
+            apiPanel.classList.add("active");
+            apiKeyInput.focus();
+        });
+
+        // Save the API key to localStorage when the user clicks 'Save Key'
+        saveApiBtn.addEventListener("click", () => {
+            const val = apiKeyInput.value.trim();
+            if (val) {
+                localStorage.setItem("openweather_api_key", val);
+                alert("API Key saved successfully! Ready to search.");
+                apiPanel.classList.remove("active");
+                checkApiKeyStatus();
+            } else {
+                localStorage.removeItem("openweather_api_key");
+                alert("API Key cleared.");
+                checkApiKeyStatus();
+            }
+        });
+
+        // Enable searching by clicking the Search Button
+        searchBtn.addEventListener("click", () => {
+            performSearch();
+        });
+
+        // Enable searching by hitting the "Enter" key on the keyboard in the input box
+        cityInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                performSearch();
+            }
+        });
+
+        // --- Core Fetch Logic using Async/Await ---
+        
+        async function performSearch() {
+            const city = cityInput.value.trim();
+            
+            // Validate search query is not blank
+            if (!city) {
+                showError("Please enter a city name first!");
+                return;
+            }
+
+            const apiKey = getApiKey();
+            
+            // Validate API Key is present
+            if (!apiKey) {
+                showError("API key missing. Click the settings gear at the top right to configure it.");
+                apiPanel.classList.add("active");
+                return;
+            }
+
+            // Hide existing views/errors and show loader
+            errorBox.classList.remove("active");
+            welcomeView.classList.add("hidden");
+            weatherContent.classList.remove("active");
+            loadingSpinner.classList.add("active");
+
+            try {
+                // Construct the OpenWeatherMap API Request URL
+                // We use 'units=metric' to fetch temperatures in Celsius
+                const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
+
+                // Fetch data from server
+                const response = await fetch(apiUrl);
+
+                // If response status is NOT ok (e.g. 404 City Not Found, 401 Invalid API Key)
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error("City not found. Please verify spelling.");
+                    } else if (response.status === 401) {
+                        throw new Error("Unauthorized! Your API key is invalid or hasn't activated yet.");
+                    } else {
+                        throw new Error(`Server returned error status: ${response.status}`);
+                    }
+                }
+
+                // Parse the response body as JSON
+                const weatherData = await response.json();
+
+                // Inject weather details into the HTML elements
+                displayWeatherData(weatherData);
+
+            } catch (err) {
+                // Catch network drops or the thrown Errors above
+                showError(err.message || "An unexpected error occurred. Please try again.");
+            } finally {
+                // Always hide the loading spinner regardless of success or failure
+                loadingSpinner.classList.remove("active");
+            }
+        }
+
+        // --- Display & UI Rendering Functions ---
+
+        // Utility to display an error card
+        function showError(message) {
+            errorText.textContent = message;
+            errorBox.classList.add("active");
+            
+            // Reset main panels to clear screen
+            weatherContent.classList.remove("active");
+            welcomeView.classList.remove("hidden");
+        }
+
+        // Binds raw API response to HTML content
+        function displayWeatherData(data) {
+            // 1. Location
+            cityNameSpan.textContent = data.name;
+            countryCodeSpan.textContent = data.sys.country;
+
+            // 2. Date
+            currentDateDiv.textContent = getFormattedDate();
+
+            // 3. Main Weather Info
+            tempValueSpan.textContent = Math.round(data.main.temp); // Round temp to closest integer
+            weatherDescDiv.textContent = data.weather[0].description;
+
+            // 4. Weather Icon
+            // OpenWeatherMap offers pre-made PNG icons (using higher resolution @4x prefix)
+            const iconCode = data.weather[0].icon;
+            weatherIcon.src = `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
+            weatherIcon.alt = data.weather[0].description;
+
+            // 5. Grid details (Humidity & Wind)
+            humidityValueSpan.textContent = `${data.main.humidity}%`;
+            windValueSpan.textContent = `${data.wind.speed} m/s`;
+
+            // Display weather panel & hide greeting view
+            weatherContent.classList.add("active");
+            welcomeView.classList.add("hidden");
+            errorBox.classList.remove("active");
+        }
+
+        // --- Setup Suggested City Pills ---
+        // Find all suggestion pills in the welcome view
+        const suggestionPills = document.querySelectorAll(".pill");
+        suggestionPills.forEach(pill => {
+            pill.addEventListener("click", () => {
+                const targetCity = pill.getAttribute("data-city");
+                cityInput.value = targetCity;
+                performSearch();
+            });
+        });
+
+        // --- Initial Start Execution ---
+        checkApiKeyStatus();
+
+    </script>
+</body>
+</html>
